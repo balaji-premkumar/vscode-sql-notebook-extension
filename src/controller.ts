@@ -95,7 +95,6 @@ export class SqlNotebookController {
   }
 
   private resultToOutput(result: SqlResultSet, connLabel: string = '', dbLabel: string = ''): vscode.NotebookCellOutput {
-    const contextLine = connLabel ? `<div class="sql-context">\u{1F5A5} ${this.escapeHtml(connLabel)} | \u{1F4C0} ${this.escapeHtml(dbLabel)}</div>` : '';
     const contextText = connLabel ? `[${connLabel} / ${dbLabel}] ` : '';
 
     if (result.columns.length === 0) {
@@ -106,46 +105,23 @@ export class SqlNotebookController {
       ]);
     }
 
-    const enrichedResult = { ...result, connectionLabel: connLabel, databaseLabel: dbLabel };
-    const jsonData = JSON.stringify(enrichedResult);
-    const htmlTable = this.renderHtmlTable(result, contextLine);
+    const tableData = result.rows.map(row => {
+      const clean: Record<string, unknown> = {};
+      for (const col of result.columns) {
+        clean[col.name] = row[col.name] ?? null;
+      }
+      return clean;
+    });
+
+    const meta = `${contextText}${result.rowCount} row(s) returned in ${result.executionTime}ms`;
 
     return new vscode.NotebookCellOutput([
-      new vscode.NotebookCellOutputItem(
-        new TextEncoder().encode(jsonData),
-        'x-application/sql-notebook-result'
-      ),
-      vscode.NotebookCellOutputItem.text(htmlTable, 'text/html'),
-      vscode.NotebookCellOutputItem.text(this.renderPlainText(result), 'text/plain')
+      vscode.NotebookCellOutputItem.json(tableData, 'application/json'),
+      vscode.NotebookCellOutputItem.text(
+        `${meta}\n\n${this.renderPlainText(result)}`,
+        'text/plain'
+      )
     ]);
-  }
-
-  private renderHtmlTable(result: SqlResultSet, contextLine: string = ''): string {
-    const headerCells = result.columns.map(c => `<th>${this.escapeHtml(c.name)}</th>`).join('');
-    const bodyRows = result.rows.map(row => {
-      const cells = result.columns.map(col => {
-        const val = row[col.name];
-        const display = val === null ? '<em>NULL</em>' : this.escapeHtml(String(val));
-        return `<td>${display}</td>`;
-      }).join('');
-      return `<tr>${cells}</tr>`;
-    }).join('\n');
-
-    return `
-<style>
-  .sql-result { border-collapse: collapse; width: 100%; font-family: var(--vscode-editor-font-family); font-size: var(--vscode-editor-font-size); }
-  .sql-result th { background: var(--vscode-editor-selectionBackground); color: var(--vscode-editor-foreground); padding: 6px 12px; text-align: left; border: 1px solid var(--vscode-panel-border); }
-  .sql-result td { padding: 4px 12px; border: 1px solid var(--vscode-panel-border); color: var(--vscode-editor-foreground); }
-  .sql-result tr:nth-child(even) { background: var(--vscode-editor-selectionBackground, rgba(0,0,0,0.04)); }
-  .sql-meta { margin-top: 6px; font-size: 0.85em; color: var(--vscode-descriptionForeground); }
-  .sql-context { margin-bottom: 6px; font-size: 0.85em; color: var(--vscode-descriptionForeground); padding: 4px 8px; background: var(--vscode-editor-selectionBackground); border-radius: 3px; display: inline-block; }
-</style>
-${contextLine}
-<table class="sql-result">
-  <thead><tr>${headerCells}</tr></thead>
-  <tbody>${bodyRows}</tbody>
-</table>
-<div class="sql-meta">${result.rowCount} row(s) returned in ${result.executionTime}ms</div>`;
   }
 
   private renderPlainText(result: SqlResultSet): string {
@@ -153,15 +129,7 @@ ${contextLine}
     const rows = result.rows.map(row =>
       result.columns.map(col => String(row[col.name] ?? 'NULL')).join('\t')
     ).join('\n');
-    return `${header}\n${rows}\n\n${result.rowCount} row(s) - ${result.executionTime}ms`;
-  }
-
-  private escapeHtml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    return `${header}\n${rows}`;
   }
 
   dispose(): void {
