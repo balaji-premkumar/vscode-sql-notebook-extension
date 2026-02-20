@@ -63,24 +63,20 @@ export function renderResultHtml(
   }
   #${uid} .sql-meta { font-size:0.85em; color:var(--vscode-descriptionForeground); margin-left:8px; }
   #${uid} .sql-grid {
-    border-collapse:collapse; width:100%; margin-top:4px; table-layout:fixed;
+    border-collapse:collapse; margin-top:4px;
     border:1px solid var(--vscode-panel-border, #333);
   }
   #${uid} .sql-grid th {
-    text-align:left; padding:5px 10px; font-weight:600;
+    text-align:left; padding:5px 10px; font-weight:600; white-space:nowrap;
     background:var(--vscode-keybindingTable-headerBackground, var(--vscode-editor-selectionBackground));
     border-bottom:2px solid var(--vscode-panel-border);
     border-right:1px solid var(--vscode-panel-border, #333);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    min-width:60px;
   }
   #${uid} .sql-grid th:last-child { border-right:none; }
   #${uid} .sql-grid td {
-    padding:4px 10px;
+    padding:4px 10px; white-space:nowrap;
     border-bottom:1px solid var(--vscode-panel-border, #333);
     border-right:1px solid var(--vscode-panel-border, #333);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    min-width:60px;
   }
   #${uid} .sql-grid td:last-child { border-right:none; }
   #${uid} .sql-grid tbody tr:nth-child(even) td {
