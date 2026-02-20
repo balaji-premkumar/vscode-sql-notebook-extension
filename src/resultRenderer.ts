@@ -78,8 +78,9 @@ export function renderResultHtml(
   }
   #${uid} .sql-grid th {
     font-weight:600; position:sticky; top:0; z-index:1;
-    background:var(--vscode-keybindingTable-headerBackground, var(--vscode-editor-selectionBackground));
+    background:var(--vscode-keybindingTable-headerBackground, var(--vscode-editor-background, #1e1e1e));
     border-bottom:2px solid var(--vscode-panel-border);
+    box-shadow:0 2px 0 -1px var(--vscode-panel-border, #333);
   }
   #${uid} .sql-grid th:last-child, #${uid} .sql-grid td:last-child { border-right:none; }
   #${uid} .sql-grid tbody tr:nth-child(even) td {
@@ -127,25 +128,24 @@ ${contextText ? `<div style="margin-bottom:4px;font-size:0.85em;color:var(--vsco
 (function(){
   var root=document.getElementById('${uid}');
   var tip=document.getElementById('${uid}-tip');
-  var hideTimer;
-  root.addEventListener('mouseover',function(e){
+  var activeTd=null;
+  root.querySelector('.sql-table-scroll').addEventListener('click',function(e){
     var td=e.target.closest&&e.target.closest('td');
     if(!td||!root.contains(td))return;
-    if(td.scrollWidth<=td.clientWidth)return;
-    clearTimeout(hideTimer);
+    if(td.scrollWidth<=td.clientWidth){tip.style.display='none';activeTd=null;return;}
+    if(activeTd===td){tip.style.display='none';activeTd=null;return;}
+    activeTd=td;
     tip.textContent=td.getAttribute('data-full')||td.textContent;
     tip.style.display='block';
     var r=td.getBoundingClientRect();
     tip.style.left=r.left+'px';
     tip.style.top=(r.bottom+4)+'px';
   });
-  root.addEventListener('mouseout',function(e){
-    var td=e.target.closest&&e.target.closest('td');
-    if(!td)return;
-    hideTimer=setTimeout(function(){tip.style.display='none';},200);
+  document.addEventListener('click',function(e){
+    if(!tip.contains(e.target)&&!(e.target.closest&&e.target.closest('td')&&root.contains(e.target))){
+      tip.style.display='none';activeTd=null;
+    }
   });
-  tip.addEventListener('mouseover',function(){clearTimeout(hideTimer);});
-  tip.addEventListener('mouseout',function(){hideTimer=setTimeout(function(){tip.style.display='none';},200);});
 })();
 </script>
 <div class="sql-json-view" style="display:none"><pre class="sql-json">${escapeHtml(jsonData)}</pre></div>
