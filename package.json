@@ -1,0 +1,370 @@
+{
+  "name": "sql-notebook",
+  "displayName": "SQL Notebook",
+  "description": "Jupyter-style notebook with SQL kernel support for VS Code",
+  "version": "1.0.0",
+  "publisher": "ey-canvas",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Notebooks",
+    "Data Science",
+    "Other"
+  ],
+  "activationEvents": [
+    "onNotebook:sql-notebook",
+    "onNotebook:jupyter-notebook",
+    "onCommand:sqlNotebook.newNotebook",
+    "onCommand:sqlNotebook.addConnection",
+    "onCommand:sqlNotebook.importFromMssql",
+    "onView:sqlNotebook.connections"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "notebooks": [
+      {
+        "type": "sql-notebook",
+        "displayName": "SQL Notebook",
+        "selector": [
+          {
+            "filenamePattern": "*.sqlnb"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "sqlNotebook.newNotebook",
+        "title": "SQL Notebook: New Notebook",
+        "icon": "$(notebook)"
+      },
+      {
+        "command": "sqlNotebook.addConnection",
+        "title": "SQL Notebook: Add Connection",
+        "icon": "$(add)"
+      },
+      {
+        "command": "sqlNotebook.removeConnection",
+        "title": "Remove Connection",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "sqlNotebook.selectConnection",
+        "title": "SQL Notebook: Select Active Connection",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "sqlNotebook.selectDatabase",
+        "title": "SQL Notebook: Select Database",
+        "icon": "$(database)"
+      },
+      {
+        "command": "sqlNotebook.refreshConnections",
+        "title": "SQL Notebook: Refresh Connections",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sqlNotebook.setActiveConnection",
+        "title": "Set as Active Connection",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "sqlNotebook.importFromMssql",
+        "title": "SQL Notebook: Import Connection from MSSQL Extension",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "sqlNotebook.createGroup",
+        "title": "SQL Notebook: Create Server Group",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "sqlNotebook.renameGroup",
+        "title": "Rename Group",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "sqlNotebook.removeGroup",
+        "title": "Remove Group",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "sqlNotebook.moveToGroup",
+        "title": "Move to Group...",
+        "icon": "$(folder)"
+      },
+      {
+        "command": "sqlNotebook.useDatabase",
+        "title": "Use This Database",
+        "icon": "$(database)"
+      },
+      {
+        "command": "sqlNotebook.serverProperties",
+        "title": "Server Properties",
+        "icon": "$(info)"
+      },
+      {
+        "command": "sqlNotebook.newQueryFromConnection",
+        "title": "New Query",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "sqlNotebook.newNotebookFromConnection",
+        "title": "New Notebook",
+        "icon": "$(notebook)"
+      },
+      {
+        "command": "sqlNotebook.showConnectionInfo",
+        "title": "Not Connected",
+        "icon": "$(server-process)"
+      },
+      {
+        "command": "sqlNotebook.editConnection",
+        "title": "Edit Connection",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "sqlNotebook.addConnectionToGroup",
+        "title": "Add Connection to Group",
+        "icon": "$(add)"
+      },
+      {
+        "command": "sqlNotebook.newQueryFromGroup",
+        "title": "New Query (All Connections)",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "sqlNotebook.newNotebookFromGroup",
+        "title": "New Notebook (All Connections)",
+        "icon": "$(notebook)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sqlNotebook",
+          "title": "SQL Notebook",
+          "icon": "$(database)"
+        }
+      ]
+    },
+    "views": {
+      "sqlNotebook": [
+        {
+          "id": "sqlNotebook.connections",
+          "name": "Object Explorer"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "sqlNotebook.addConnection",
+          "when": "view == sqlNotebook.connections",
+          "group": "navigation@1"
+        },
+        {
+          "command": "sqlNotebook.createGroup",
+          "when": "view == sqlNotebook.connections",
+          "group": "navigation@2"
+        },
+        {
+          "command": "sqlNotebook.importFromMssql",
+          "when": "view == sqlNotebook.connections",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sqlNotebook.refreshConnections",
+          "when": "view == sqlNotebook.connections",
+          "group": "navigation@4"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sqlNotebook.setActiveConnection",
+          "when": "view == sqlNotebook.connections && viewItem == connection",
+          "group": "inline@1"
+        },
+        {
+          "command": "sqlNotebook.moveToGroup",
+          "when": "view == sqlNotebook.connections && viewItem == connection",
+          "group": "inline@2"
+        },
+        {
+          "command": "sqlNotebook.removeConnection",
+          "when": "view == sqlNotebook.connections && viewItem == connection",
+          "group": "inline@3"
+        },
+        {
+          "command": "sqlNotebook.editConnection",
+          "when": "view == sqlNotebook.connections && viewItem == connection",
+          "group": "1_info@0"
+        },
+        {
+          "command": "sqlNotebook.serverProperties",
+          "when": "view == sqlNotebook.connections && viewItem == connection",
+          "group": "1_info@1"
+        },
+        {
+          "command": "sqlNotebook.newQueryFromConnection",
+          "when": "view == sqlNotebook.connections && viewItem == connection",
+          "group": "2_create@1"
+        },
+        {
+          "command": "sqlNotebook.newNotebookFromConnection",
+          "when": "view == sqlNotebook.connections && viewItem == connection",
+          "group": "2_create@2"
+        },
+        {
+          "command": "sqlNotebook.addConnectionToGroup",
+          "when": "view == sqlNotebook.connections && viewItem == group",
+          "group": "1_manage@1"
+        },
+        {
+          "command": "sqlNotebook.newQueryFromGroup",
+          "when": "view == sqlNotebook.connections && viewItem == group",
+          "group": "2_create@1"
+        },
+        {
+          "command": "sqlNotebook.newNotebookFromGroup",
+          "when": "view == sqlNotebook.connections && viewItem == group",
+          "group": "2_create@2"
+        },
+        {
+          "command": "sqlNotebook.renameGroup",
+          "when": "view == sqlNotebook.connections && viewItem == group",
+          "group": "3_edit@1"
+        },
+        {
+          "command": "sqlNotebook.removeGroup",
+          "when": "view == sqlNotebook.connections && viewItem == group",
+          "group": "3_edit@2"
+        },
+        {
+          "command": "sqlNotebook.useDatabase",
+          "when": "view == sqlNotebook.connections && viewItem == database",
+          "group": "inline@1"
+        }
+      ],
+      "notebook/toolbar": [
+        {
+          "command": "sqlNotebook.selectConnection",
+          "group": "navigation@1",
+          "when": "notebookType == sql-notebook || notebookType == jupyter-notebook"
+        },
+        {
+          "command": "sqlNotebook.selectDatabase",
+          "group": "navigation@2",
+          "when": "notebookType == sql-notebook || notebookType == jupyter-notebook"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "sqlNotebook.showConnectionInfo",
+          "group": "navigation@100",
+          "when": "(activeNotebookType == sql-notebook || activeNotebookType == jupyter-notebook) && sqlNotebook.hasActiveConnection"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "sqlNotebook.setActiveConnection",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.useDatabase",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.renameGroup",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.removeGroup",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.moveToGroup",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.serverProperties",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.newQueryFromConnection",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.newNotebookFromConnection",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.removeConnection",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.showConnectionInfo",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.editConnection",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.addConnectionToGroup",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.newQueryFromGroup",
+          "when": "false"
+        },
+        {
+          "command": "sqlNotebook.newNotebookFromGroup",
+          "when": "false"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "sqlNotebook.connections",
+        "contents": "No database connections configured.\n[Add Connection](command:sqlNotebook.addConnection)\n[Create Server Group](command:sqlNotebook.createGroup)\n[Import from MSSQL Extension](command:sqlNotebook.importFromMssql)\n\nConnections are saved locally. Group servers together for easy management."
+      }
+    ],
+    "notebookRenderer": [
+      {
+        "id": "sql-notebook-result-renderer",
+        "entrypoint": "./out/renderer.js",
+        "displayName": "SQL Result Renderer",
+        "mimeTypes": [
+          "x-application/sql-notebook-result"
+        ],
+        "requiresMessaging": "optional"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "compile:tsc": "tsc -p ./ --noEmit",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "lint": "eslint src --ext ts",
+    "pretest": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.75.0",
+    "@types/vscode-notebook-renderer": "^1.72.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.3.0",
+    "webpack": "^5.105.2",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "mssql": "^10.0.0"
+  }
+}

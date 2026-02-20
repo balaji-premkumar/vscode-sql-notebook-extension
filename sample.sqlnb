@@ -1,0 +1,32 @@
+{
+  "cells": [
+    {
+      "kind": "markup",
+      "language": "markdown",
+      "value": "# Sample SQL Notebook\n\nThis notebook demonstrates the SQL Notebook extension.\nFirst, add a connection using the sidebar, then execute cells below."
+    },
+    {
+      "kind": "code",
+      "language": "sql",
+      "value": "SELECT @@VERSION AS [SQL Server Version];"
+    },
+    {
+      "kind": "code",
+      "language": "sql",
+      "value": "SELECT \n  name,\n  database_id,\n  create_date\nFROM sys.databases\nORDER BY name;"
+    },
+    {
+      "kind": "markup",
+      "language": "markdown",
+      "value": "## Table Information\n\nQuery the tables in the current database:"
+    },
+    {
+      "kind": "code",
+      "language": "sql",
+      "value": "SELECT \n  TABLE_SCHEMA,\n  TABLE_NAME,\n  TABLE_TYPE\nFROM INFORMATION_SCHEMA.TABLES\nORDER BY TABLE_SCHEMA, TABLE_NAME;"
+    }
+  ],
+  "metadata": {
+    "connectionId": null
+  }
+}

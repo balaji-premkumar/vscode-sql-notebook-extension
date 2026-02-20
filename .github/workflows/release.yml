@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0). Leave empty to use package.json version.'
+        required: false
+        type: string
+
+jobs:
+  build-extension:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build production
+        run: npm run package
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package VSIX
+        run: vsce package --no-dependencies -o sql-notebook-${{ steps.version.outputs.version }}.vsix
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: sql-notebook-vsix
+          path: sql-notebook-${{ steps.version.outputs.version }}.vsix
+
+  build-kernel:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build kernel-only
+        run: npx webpack --config webpack.kernel.config.js --mode production --devtool hidden-source-map
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(node -p "require('./kernel-only/package.json').version")" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Copy shared files for kernel package
+        run: |
+          cp README.md kernel-only/README.md 2>/dev/null || true
+          cp LICENSE kernel-only/LICENSE 2>/dev/null || true
+
+      - name: Package kernel-only VSIX
+        working-directory: kernel-only
+        run: |
+          npm install --omit=dev --ignore-scripts 2>/dev/null || true
+          vsce package --no-dependencies -o ../sql-notebook-kernel-${{ steps.version.outputs.version }}.vsix
+
+      - name: Upload kernel VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: sql-notebook-kernel-vsix
+          path: sql-notebook-kernel-${{ steps.version.outputs.version }}.vsix
+
+  release:
+    needs: [build-extension, build-kernel]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download extension VSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: sql-notebook-vsix
+          path: ./artifacts
+
+      - name: Download kernel VSIX
+        uses: actions/download-artifact@v4
+        with:
+          name: sql-notebook-kernel-vsix
+          path: ./artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: SQL Notebook v${{ steps.version.outputs.version }}
+          body: |
+            ## SQL Notebook v${{ steps.version.outputs.version }}
+
+            ### Downloads
+
+            | Package | Description |
+            |---|---|
+            | `sql-notebook-${{ steps.version.outputs.version }}.vsix` | Full extension with Object Explorer, connection management, SQL notebooks, and Jupyter kernel |
+            | `sql-notebook-kernel-${{ steps.version.outputs.version }}.vsix` | Kernel-only: lightweight SQL kernel for existing Jupyter notebooks |
+
+            ### Installation
+
+            1. Download the `.vsix` file for your use case
+            2. In VS Code, open Command Palette (`Ctrl+Shift+P`)
+            3. Run **Extensions: Install from VSIX...**
+            4. Select the downloaded file
+
+            ### What's New
+
+            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) for full feature list.
+          files: |
+            ./artifacts/*.vsix
+          draft: false
+          prerelease: false
+          generate_release_notes: true

@@ -1,0 +1,10 @@
+out/
+node_modules/
+*.vsix
+.vscode-test/
+dist/
+*.js.map
+.DS_Store
+Thumbs.db
+kernel-only/out/
+kernel-only/node_modules/
