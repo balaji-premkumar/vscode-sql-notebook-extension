@@ -35,17 +35,13 @@ export function renderResultHtml(
     </div>`;
   }
 
-  const jsonData = JSON.stringify(
-    result.rows.map(row => {
-      const clean: Record<string, unknown> = {};
-      for (const col of result.columns) {
-        clean[col.name] = row[col.name] ?? null;
-      }
-      return clean;
-    }),
-    null,
-    2
-  );
+  const rows = result.rows.map(row => {
+    const clean: Record<string, unknown> = {};
+    for (const col of result.columns) {
+      clean[col.name] = row[col.name] ?? null;
+    }
+    return clean;
+  });
 
   return `<div id="${uid}" style="font-family:var(--vscode-editor-font-family);font-size:var(--vscode-editor-font-size);color:var(--vscode-editor-foreground)">
 <style>
@@ -62,13 +58,13 @@ export function renderResultHtml(
     color:var(--vscode-button-foreground);
   }
   #${uid} .sql-meta { font-size:0.85em; color:var(--vscode-descriptionForeground); margin-left:8px; }
-  #${uid} .sql-table-scroll {
+  #${uid} .sql-scroll-container {
     max-height:400px; overflow:auto;
     border:1px solid var(--vscode-panel-border, #333);
     margin-top:4px;
   }
   #${uid} .sql-grid {
-    border-collapse:collapse; table-layout:fixed; width:max-content; min-width:100%;
+    border-collapse:separate; border-spacing:0; table-layout:fixed; width:max-content; min-width:100%;
   }
   #${uid} .sql-grid th, #${uid} .sql-grid td {
     text-align:left; padding:4px 10px; width:180px; max-width:180px;
@@ -77,10 +73,9 @@ export function renderResultHtml(
     border-right:1px solid var(--vscode-panel-border, #333);
   }
   #${uid} .sql-grid th {
-    font-weight:600; position:sticky; top:0; z-index:1;
-    background:var(--vscode-keybindingTable-headerBackground, var(--vscode-editor-background, #1e1e1e));
+    font-weight:600; position:sticky; top:0; z-index:2;
+    background:var(--vscode-editor-background, #1e1e1e);
     border-bottom:2px solid var(--vscode-panel-border);
-    box-shadow:0 2px 0 -1px var(--vscode-panel-border, #333);
   }
   #${uid} .sql-grid th:last-child, #${uid} .sql-grid td:last-child { border-right:none; }
   #${uid} .sql-grid tbody tr:nth-child(even) td {
@@ -98,16 +93,29 @@ export function renderResultHtml(
     font-size:0.85em; white-space:pre-wrap; word-break:break-all;
     box-shadow:0 2px 8px rgba(0,0,0,0.3); cursor:text; user-select:text;
   }
-  #${uid} .sql-json {
-    white-space:pre-wrap; word-wrap:break-word;
-    font-family:var(--vscode-editor-font-family); font-size:0.9em;
-    padding:10px 12px; margin:4px 0 0 0;
-    background:var(--vscode-textCodeBlock-background, var(--vscode-editor-background));
+  #${uid} .sql-json-scroll {
+    max-height:400px; overflow:auto;
     border:1px solid var(--vscode-panel-border);
-    border-radius:4px; overflow-x:auto;
-    color:var(--vscode-editor-foreground);
-    line-height:1.45;
+    border-radius:4px; margin-top:4px;
+    background:var(--vscode-editor-background, #1e1e1e);
+    padding:8px 0;
+    font-family:var(--vscode-editor-font-family); font-size:0.9em;
+    line-height:1.5;
   }
+  #${uid} .jv-row { padding:0 12px; white-space:nowrap; }
+  #${uid} .jv-toggle {
+    cursor:pointer; user-select:none; display:inline-block; width:14px; text-align:center;
+    color:var(--vscode-descriptionForeground); font-size:0.75em;
+  }
+  #${uid} .jv-toggle:hover { color:var(--vscode-editor-foreground); }
+  #${uid} .jv-key { color:var(--vscode-symbolIcon-propertyForeground, #9cdcfe); }
+  #${uid} .jv-str { color:var(--vscode-debugTokenExpression-string, #ce9178); }
+  #${uid} .jv-num { color:var(--vscode-debugTokenExpression-number, #b5cea8); }
+  #${uid} .jv-bool { color:var(--vscode-debugTokenExpression-boolean, #569cd6); }
+  #${uid} .jv-null { color:var(--vscode-descriptionForeground); font-style:italic; }
+  #${uid} .jv-bracket { color:var(--vscode-editor-foreground); }
+  #${uid} .jv-hidden { display:none; }
+  #${uid} .jv-ellipsis { color:var(--vscode-descriptionForeground); cursor:pointer; }
   #${uid} .sql-messages { margin-top:4px; }
   #${uid} .sql-msg-toggle { font-size:0.8em; color:var(--vscode-textLink-foreground, #3794ff); cursor:pointer; border:none; background:none; padding:0; text-decoration:underline; }
   #${uid} .sql-msg-toggle:hover { color:var(--vscode-textLink-activeForeground, #3794ff); }
@@ -123,13 +131,19 @@ ${contextText ? `<div style="margin-bottom:4px;font-size:0.85em;color:var(--vsco
   <button onclick="document.querySelector('#${uid} .sql-json-view').style.display='';document.querySelector('#${uid} .sql-table-view').style.display='none';this.classList.add('active');this.previousElementSibling.classList.remove('active')">JSON</button>
   <span class="sql-meta">${result.rowCount} row(s) &middot; ${result.executionTime}ms</span>
 </div>
-<div class="sql-table-view"><div class="sql-table-scroll">${renderTable(result)}</div><div class="sql-tooltip" id="${uid}-tip"></div></div>
+<div class="sql-table-view">
+  <div class="sql-scroll-container">${renderTable(result)}</div>
+  <div class="sql-tooltip" id="${uid}-tip"></div>
+</div>
+<div class="sql-json-view" style="display:none">
+  <div class="sql-json-scroll" id="${uid}-jv"></div>
+</div>
 <script>
 (function(){
   var root=document.getElementById('${uid}');
   var tip=document.getElementById('${uid}-tip');
   var activeTd=null;
-  root.querySelector('.sql-table-scroll').addEventListener('click',function(e){
+  root.querySelector('.sql-scroll-container').addEventListener('click',function(e){
     var td=e.target.closest&&e.target.closest('td');
     if(!td||!root.contains(td))return;
     if(td.scrollWidth<=td.clientWidth){tip.style.display='none';activeTd=null;return;}
@@ -146,9 +160,64 @@ ${contextText ? `<div style="margin-bottom:4px;font-size:0.85em;color:var(--vsco
       tip.style.display='none';activeTd=null;
     }
   });
+
+  var data=${JSON.stringify(rows)};
+  var jv=document.getElementById('${uid}-jv');
+  function renderJson(val,indent,isLast){
+    var pad='';for(var i=0;i<indent;i++)pad+='&nbsp;&nbsp;';
+    var comma=isLast?'':',';
+    if(val===null)return pad+'<span class="jv-null">null</span>'+comma+'\\n';
+    if(typeof val==='string')return pad+'<span class="jv-str">"'+esc(val)+'"</span>'+comma+'\\n';
+    if(typeof val==='number')return pad+'<span class="jv-num">'+val+'</span>'+comma+'\\n';
+    if(typeof val==='boolean')return pad+'<span class="jv-bool">'+val+'</span>'+comma+'\\n';
+    if(Array.isArray(val)){
+      if(val.length===0)return pad+'<span class="jv-bracket">[]</span>'+comma+'\\n';
+      var id='jv_'+Math.random().toString(36).substr(2,6);
+      var h=pad+'<span class="jv-toggle" data-target="'+id+'" data-open="true">&#9660;</span>';
+      h+='<span class="jv-bracket">[</span>';
+      h+='<span class="jv-ellipsis" data-target="'+id+'" style="display:none">...</span>';
+      h+='\\n<span id="'+id+'">';
+      for(var i=0;i<val.length;i++)h+=renderJson(val[i],indent+1,i===val.length-1);
+      h+=pad+'</span><span class="jv-bracket">]</span>'+comma+'\\n';
+      return h;
+    }
+    if(typeof val==='object'){
+      var keys=Object.keys(val);
+      if(keys.length===0)return pad+'<span class="jv-bracket">{}</span>'+comma+'\\n';
+      var id='jv_'+Math.random().toString(36).substr(2,6);
+      var h=pad+'<span class="jv-toggle" data-target="'+id+'" data-open="true">&#9660;</span>';
+      h+='<span class="jv-bracket">{</span>';
+      h+='<span class="jv-ellipsis" data-target="'+id+'" style="display:none">...</span>';
+      h+='\\n<span id="'+id+'">';
+      for(var i=0;i<keys.length;i++){
+        var k=keys[i];var last=i===keys.length-1;
+        var inner=renderJson(val[k],0,true).replace(/\\n$/,'');
+        h+=pad+'&nbsp;&nbsp;<span class="jv-key">"'+esc(k)+'"</span>: '+inner.trimStart()+(last?'':',')+'\\n';
+      }
+      h+=pad+'</span><span class="jv-bracket">}</span>'+comma+'\\n';
+      return h;
+    }
+    return pad+esc(String(val))+comma+'\\n';
+  }
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  jv.innerHTML='<div class="jv-row" style="white-space:pre-wrap">'+renderJson(data,0,true)+'</div>';
+  jv.addEventListener('click',function(e){
+    var tgt=e.target.closest&&(e.target.closest('.jv-toggle')||e.target.closest('.jv-ellipsis'));
+    if(!tgt)return;
+    var targetId=tgt.getAttribute('data-target');
+    var content=document.getElementById(targetId);
+    if(!content)return;
+    var isOpen=content.style.display!=='none';
+    content.style.display=isOpen?'none':'';
+    var toggles=jv.querySelectorAll('[data-target="'+targetId+'"]');
+    for(var i=0;i<toggles.length;i++){
+      var el=toggles[i];
+      if(el.classList.contains('jv-toggle')){el.innerHTML=isOpen?'&#9654;':'&#9660;';el.setAttribute('data-open',isOpen?'false':'true');}
+      if(el.classList.contains('jv-ellipsis')){el.style.display=isOpen?'':'none';}
+    }
+  });
 })();
 </script>
-<div class="sql-json-view" style="display:none"><pre class="sql-json">${escapeHtml(jsonData)}</pre></div>
 ${renderMessages(messages, uid)}
 </div>`;
 }
