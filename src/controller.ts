@@ -95,7 +95,7 @@ export class SqlNotebookController {
   }
 
   private resultToOutput(result: SqlResultSet, connLabel: string = '', dbLabel: string = ''): vscode.NotebookCellOutput {
-    const contextLine = connLabel ? `<div class="sql-context">$(server) ${this.escapeHtml(connLabel)} | $(database) ${this.escapeHtml(dbLabel)}</div>` : '';
+    const contextLine = connLabel ? `<div class="sql-context">\u{1F5A5} ${this.escapeHtml(connLabel)} | \u{1F4C0} ${this.escapeHtml(dbLabel)}</div>` : '';
     const contextText = connLabel ? `[${connLabel} / ${dbLabel}] ` : '';
 
     if (result.columns.length === 0) {
@@ -106,15 +106,16 @@ export class SqlNotebookController {
       ]);
     }
 
+    const enrichedResult = { ...result, connectionLabel: connLabel, databaseLabel: dbLabel };
+    const jsonData = JSON.stringify(enrichedResult);
     const htmlTable = this.renderHtmlTable(result, contextLine);
-    const jsonData = JSON.stringify(result);
 
     return new vscode.NotebookCellOutput([
-      vscode.NotebookCellOutputItem.text(htmlTable, 'text/html'),
       new vscode.NotebookCellOutputItem(
         new TextEncoder().encode(jsonData),
         'x-application/sql-notebook-result'
       ),
+      vscode.NotebookCellOutputItem.text(htmlTable, 'text/html'),
       vscode.NotebookCellOutputItem.text(this.renderPlainText(result), 'text/plain')
     ]);
   }

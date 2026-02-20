@@ -104,15 +104,16 @@ export class SqlJupyterKernel {
       ]);
     }
 
+    const enrichedResult = { ...result, connectionLabel: connLabel, databaseLabel: dbLabel };
+    const jsonData = JSON.stringify(enrichedResult);
     const htmlTable = this.renderHtmlTable(result, connLabel, dbLabel);
-    const jsonData = JSON.stringify(result);
 
     return new vscode.NotebookCellOutput([
-      vscode.NotebookCellOutputItem.text(htmlTable, 'text/html'),
       new vscode.NotebookCellOutputItem(
         new TextEncoder().encode(jsonData),
         'x-application/sql-notebook-result'
       ),
+      vscode.NotebookCellOutputItem.text(htmlTable, 'text/html'),
       vscode.NotebookCellOutputItem.text(this.renderPlainText(result), 'text/plain')
     ]);
   }

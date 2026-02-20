@@ -9,7 +9,6 @@ export class QueryExecutor {
     const pool = await this.connectionManager.getPool(connectionId);
     const start = Date.now();
     const request = pool.request();
-
     const result = await request.query(query);
     const elapsed = Date.now() - start;
 
@@ -22,6 +21,9 @@ export class QueryExecutor {
           type: col.type?.declaration ?? 'unknown'
         })
       );
+
+      // Skip empty resultsets from USE statements
+      if (columns.length === 0) { continue; }
 
       const rows = recordset.map((row: Record<string, unknown>) => {
         const clean: Record<string, unknown> = {};

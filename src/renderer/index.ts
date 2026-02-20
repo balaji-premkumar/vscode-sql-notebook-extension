@@ -18,6 +18,7 @@ export const activate = (_context: RendererContext) => {
       const style = document.createElement('style');
       style.textContent = `
         .sql-result-wrapper { font-family: var(--vscode-editor-font-family); font-size: var(--vscode-editor-font-size); }
+        .sql-conn-banner { display: inline-block; margin-bottom: 8px; padding: 4px 10px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); border-radius: 3px; font-size: 0.85em; }
         .sql-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
         .sql-toolbar button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 4px 8px; cursor: pointer; font-size: 0.85em; border-radius: 2px; }
         .sql-toolbar button:hover { background: var(--vscode-button-hoverBackground); }
@@ -29,6 +30,13 @@ export const activate = (_context: RendererContext) => {
         .null-value { color: var(--vscode-descriptionForeground); font-style: italic; }
       `;
       wrapper.appendChild(style);
+
+      if (result.connectionLabel) {
+        const banner = document.createElement('div');
+        banner.className = 'sql-conn-banner';
+        banner.textContent = `${result.connectionLabel} | ${result.databaseLabel || ''}`;
+        wrapper.appendChild(banner);
+      }
 
       const toolbar = document.createElement('div');
       toolbar.className = 'sql-toolbar';
