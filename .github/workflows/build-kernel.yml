@@ -42,6 +42,7 @@ jobs:
         working-directory: kernel-only
         run: |
           npm install --omit=dev --ignore-scripts 2>/dev/null || true
+          npm pkg delete scripts.vscode:prepublish
           vsce package --no-dependencies -o ../sql-notebook-kernel-${{ steps.version.outputs.version }}.vsix
 
       - name: Upload kernel VSIX artifact
