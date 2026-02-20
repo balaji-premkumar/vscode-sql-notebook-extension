@@ -15,13 +15,23 @@ export function renderResultHtml(
   messages: SqlMessage[]
 ): string {
   const contextText = connLabel ? `${connLabel} / ${dbLabel}` : '';
+  const uid = 'r' + Math.random().toString(36).substring(2, 9);
 
   if (result.columns.length === 0) {
     const statusMsg = `Query executed successfully. ${result.rowCount} row(s) affected. (${result.executionTime}ms)`;
-    return `<div style="font-family:var(--vscode-editor-font-family);font-size:var(--vscode-editor-font-size);color:var(--vscode-editor-foreground)">
+    return `<div id="${uid}" style="font-family:var(--vscode-editor-font-family);font-size:var(--vscode-editor-font-size);color:var(--vscode-editor-foreground)">
+      <style>
+        #${uid} .sql-messages { margin-top:4px; }
+        #${uid} .sql-msg-toggle { font-size:0.8em; color:var(--vscode-textLink-foreground, #3794ff); cursor:pointer; border:none; background:none; padding:0; text-decoration:underline; }
+        #${uid} .sql-msg-body { display:none; margin-top:4px; padding:4px 0; border-top:1px solid var(--vscode-panel-border); }
+        #${uid} .sql-msg { font-size:0.85em; padding:1px 0; }
+        #${uid} .sql-msg-info { color:var(--vscode-descriptionForeground); }
+        #${uid} .sql-msg-warning { color:var(--vscode-editorWarning-foreground, #cca700); }
+        #${uid} .sql-msg-error { color:var(--vscode-editorError-foreground, #f44747); }
+      </style>
       ${contextText ? `<div style="margin-bottom:6px;font-size:0.85em;color:var(--vscode-descriptionForeground)">${escapeHtml(contextText)}</div>` : ''}
       <div style="padding:4px 0">${escapeHtml(statusMsg)}</div>
-      ${renderMessages(messages)}
+      ${renderMessages(messages, uid)}
     </div>`;
   }
 
@@ -36,8 +46,6 @@ export function renderResultHtml(
     null,
     2
   );
-
-  const uid = 'r' + Math.random().toString(36).substring(2, 9);
 
   return `<div id="${uid}" style="font-family:var(--vscode-editor-font-family);font-size:var(--vscode-editor-font-size);color:var(--vscode-editor-foreground)">
 <style>
@@ -67,7 +75,10 @@ export function renderResultHtml(
   #${uid} .sql-grid tr:hover td { background:var(--vscode-list-hoverBackground); }
   #${uid} .null-val { color:var(--vscode-descriptionForeground); font-style:italic; }
   #${uid} .sql-json { white-space:pre-wrap; font-size:0.9em; padding:8px; background:var(--vscode-textCodeBlock-background, var(--vscode-editor-background)); border:1px solid var(--vscode-panel-border); border-radius:3px; overflow-x:auto; margin-top:4px; display:none; }
-  #${uid} .sql-messages { margin-top:8px; border-top:1px solid var(--vscode-panel-border); padding-top:6px; }
+  #${uid} .sql-messages { margin-top:4px; }
+  #${uid} .sql-msg-toggle { font-size:0.8em; color:var(--vscode-textLink-foreground, #3794ff); cursor:pointer; border:none; background:none; padding:0; text-decoration:underline; }
+  #${uid} .sql-msg-toggle:hover { color:var(--vscode-textLink-activeForeground, #3794ff); }
+  #${uid} .sql-msg-body { display:none; margin-top:4px; padding:4px 0; border-top:1px solid var(--vscode-panel-border); }
   #${uid} .sql-msg { font-size:0.85em; padding:1px 0; }
   #${uid} .sql-msg-info { color:var(--vscode-descriptionForeground); }
   #${uid} .sql-msg-warning { color:var(--vscode-editorWarning-foreground, #cca700); }
@@ -81,7 +92,7 @@ ${contextText ? `<div style="margin-bottom:4px;font-size:0.85em;color:var(--vsco
 </div>
 <div class="sql-table-view">${renderTable(result)}</div>
 <div class="sql-json-view" style="display:none"><pre class="sql-json">${escapeHtml(jsonData)}</pre></div>
-${renderMessages(messages)}
+${renderMessages(messages, uid)}
 </div>`;
 }
 
@@ -104,7 +115,7 @@ function renderTable(result: SqlResultSet): string {
   return `<table class="sql-grid"><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>`;
 }
 
-function renderMessages(messages: SqlMessage[]): string {
+function renderMessages(messages: SqlMessage[], uid: string): string {
   if (messages.length === 0) { return ''; }
 
   const items = messages.map(m => {
@@ -113,5 +124,5 @@ function renderMessages(messages: SqlMessage[]): string {
     return `<div class="${cls}">${icon}${escapeHtml(m.text)}</div>`;
   }).join('');
 
-  return `<div class="sql-messages"><div style="font-size:0.8em;font-weight:600;margin-bottom:2px;color:var(--vscode-descriptionForeground)">Messages</div>${items}</div>`;
+  return `<div class="sql-messages"><button class="sql-msg-toggle" onclick="var b=document.querySelector('#${uid} .sql-msg-body');b.style.display=b.style.display==='none'?'':'none'">Messages (${messages.length})</button><div class="sql-msg-body">${items}</div></div>`;
 }
