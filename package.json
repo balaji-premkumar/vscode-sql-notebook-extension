@@ -3,7 +3,7 @@
   "displayName": "SQL Notebook",
   "description": "Jupyter-style notebook with SQL kernel support for VS Code",
   "version": "1.0.0",
-  "publisher": "ey-canvas",
+  "publisher": "Balaji Premkumar",
   "engines": {
     "vscode": "^1.75.0"
   },
