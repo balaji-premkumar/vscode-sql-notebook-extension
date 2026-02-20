@@ -3,7 +3,7 @@
   "displayName": "SQL Notebook Kernel",
   "description": "SQL kernel for Jupyter notebooks in VS Code - execute SQL queries against SQL Server",
   "version": "1.0.0",
-  "publisher": "Balaji Premkumar",
+  "publisher": "balaji-premkumar",
   "engines": {
     "vscode": "^1.75.0"
   },
