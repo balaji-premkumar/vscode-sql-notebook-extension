@@ -136,6 +136,17 @@ jobs:
           name: sql-notebook-kernel-vsix
           path: ./artifacts
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Publish extension to VS Code Marketplace
+        run: vsce publish --packagePath ./artifacts/sql-notebook-${{ steps.version.outputs.version }}.vsix --pat ${{ secrets.VSCE_PAT }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
