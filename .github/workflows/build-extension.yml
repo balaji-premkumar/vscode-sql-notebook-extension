@@ -1,13 +1,6 @@
 name: Build & Publish Extension VSIX
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - '*.md'
-      - 'kernel-only/**'
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:

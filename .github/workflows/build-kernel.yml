@@ -1,12 +1,6 @@
 name: Build & Publish Kernel-Only VSIX
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - '*.md'
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:

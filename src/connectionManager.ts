@@ -329,8 +329,7 @@ export class ConnectionManager {
     authenticationType: 'sql' | 'windows'; user?: string; password?: string;
     encrypt: boolean; trustServerCertificate: boolean;
   }): Promise<void> {
-    const sql = require('mssql') as typeof import('mssql');
-    const config: import('mssql').config = {
+    const config: sql.config = {
       server: data.server,
       port: data.port,
       database: data.database,
