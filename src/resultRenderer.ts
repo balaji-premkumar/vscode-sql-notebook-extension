@@ -62,19 +62,42 @@ export function renderResultHtml(
     color:var(--vscode-button-foreground);
   }
   #${uid} .sql-meta { font-size:0.85em; color:var(--vscode-descriptionForeground); margin-left:8px; }
-  #${uid} .sql-grid { border-collapse:collapse; width:100%; margin-top:4px; }
+  #${uid} .sql-grid {
+    border-collapse:collapse; width:100%; margin-top:4px; table-layout:fixed;
+    border:1px solid var(--vscode-panel-border, #333);
+  }
   #${uid} .sql-grid th {
-    text-align:left; padding:4px 10px; font-weight:600;
+    text-align:left; padding:5px 10px; font-weight:600;
     background:var(--vscode-keybindingTable-headerBackground, var(--vscode-editor-selectionBackground));
-    border-bottom:1px solid var(--vscode-panel-border);
+    border-bottom:2px solid var(--vscode-panel-border);
+    border-right:1px solid var(--vscode-panel-border, #333);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    min-width:60px;
   }
+  #${uid} .sql-grid th:last-child { border-right:none; }
   #${uid} .sql-grid td {
-    padding:3px 10px;
+    padding:4px 10px;
     border-bottom:1px solid var(--vscode-panel-border, #333);
+    border-right:1px solid var(--vscode-panel-border, #333);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    min-width:60px;
   }
-  #${uid} .sql-grid tr:hover td { background:var(--vscode-list-hoverBackground); }
+  #${uid} .sql-grid td:last-child { border-right:none; }
+  #${uid} .sql-grid tbody tr:nth-child(even) td {
+    background:var(--vscode-list-hoverBackground, rgba(128,128,128,0.04));
+  }
+  #${uid} .sql-grid tbody tr:hover td { background:var(--vscode-list-activeSelectionBackground, rgba(128,128,128,0.12)); }
   #${uid} .null-val { color:var(--vscode-descriptionForeground); font-style:italic; }
-  #${uid} .sql-json { white-space:pre-wrap; font-size:0.9em; padding:8px; background:var(--vscode-textCodeBlock-background, var(--vscode-editor-background)); border:1px solid var(--vscode-panel-border); border-radius:3px; overflow-x:auto; margin-top:4px; display:none; }
+  #${uid} .sql-json {
+    white-space:pre-wrap; word-wrap:break-word;
+    font-family:var(--vscode-editor-font-family); font-size:0.9em;
+    padding:10px 12px; margin:4px 0 0 0;
+    background:var(--vscode-textCodeBlock-background, var(--vscode-editor-background));
+    border:1px solid var(--vscode-panel-border);
+    border-radius:4px; overflow-x:auto;
+    color:var(--vscode-editor-foreground);
+    line-height:1.45;
+  }
   #${uid} .sql-messages { margin-top:4px; }
   #${uid} .sql-msg-toggle { font-size:0.8em; color:var(--vscode-textLink-foreground, #3794ff); cursor:pointer; border:none; background:none; padding:0; text-decoration:underline; }
   #${uid} .sql-msg-toggle:hover { color:var(--vscode-textLink-activeForeground, #3794ff); }
@@ -90,7 +113,7 @@ ${contextText ? `<div style="margin-bottom:4px;font-size:0.85em;color:var(--vsco
   <button onclick="document.querySelector('#${uid} .sql-json-view').style.display='';document.querySelector('#${uid} .sql-table-view').style.display='none';this.classList.add('active');this.previousElementSibling.classList.remove('active')">JSON</button>
   <span class="sql-meta">${result.rowCount} row(s) &middot; ${result.executionTime}ms</span>
 </div>
-<div class="sql-table-view">${renderTable(result)}</div>
+<div class="sql-table-view" style="overflow-x:auto">${renderTable(result)}</div>
 <div class="sql-json-view" style="display:none"><pre class="sql-json">${escapeHtml(jsonData)}</pre></div>
 ${renderMessages(messages, uid)}
 </div>`;
