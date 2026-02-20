@@ -62,28 +62,41 @@ export function renderResultHtml(
     color:var(--vscode-button-foreground);
   }
   #${uid} .sql-meta { font-size:0.85em; color:var(--vscode-descriptionForeground); margin-left:8px; }
-  #${uid} .sql-grid {
-    border-collapse:collapse; margin-top:4px;
+  #${uid} .sql-table-scroll {
+    max-height:400px; overflow:auto;
     border:1px solid var(--vscode-panel-border, #333);
+    margin-top:4px;
   }
-  #${uid} .sql-grid th {
-    text-align:left; padding:5px 10px; font-weight:600; white-space:nowrap;
-    background:var(--vscode-keybindingTable-headerBackground, var(--vscode-editor-selectionBackground));
-    border-bottom:2px solid var(--vscode-panel-border);
-    border-right:1px solid var(--vscode-panel-border, #333);
+  #${uid} .sql-grid {
+    border-collapse:collapse; table-layout:fixed; width:max-content; min-width:100%;
   }
-  #${uid} .sql-grid th:last-child { border-right:none; }
-  #${uid} .sql-grid td {
-    padding:4px 10px; white-space:nowrap;
+  #${uid} .sql-grid th, #${uid} .sql-grid td {
+    text-align:left; padding:4px 10px; width:180px; max-width:180px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     border-bottom:1px solid var(--vscode-panel-border, #333);
     border-right:1px solid var(--vscode-panel-border, #333);
   }
-  #${uid} .sql-grid td:last-child { border-right:none; }
+  #${uid} .sql-grid th {
+    font-weight:600; position:sticky; top:0; z-index:1;
+    background:var(--vscode-keybindingTable-headerBackground, var(--vscode-editor-selectionBackground));
+    border-bottom:2px solid var(--vscode-panel-border);
+  }
+  #${uid} .sql-grid th:last-child, #${uid} .sql-grid td:last-child { border-right:none; }
   #${uid} .sql-grid tbody tr:nth-child(even) td {
     background:var(--vscode-list-hoverBackground, rgba(128,128,128,0.04));
   }
   #${uid} .sql-grid tbody tr:hover td { background:var(--vscode-list-activeSelectionBackground, rgba(128,128,128,0.12)); }
   #${uid} .null-val { color:var(--vscode-descriptionForeground); font-style:italic; }
+  #${uid} .sql-tooltip {
+    display:none; position:fixed; z-index:9999;
+    max-width:400px; max-height:200px; overflow:auto;
+    padding:8px 10px; border-radius:4px;
+    background:var(--vscode-editorHoverWidget-background, #2d2d30);
+    color:var(--vscode-editorHoverWidget-foreground, #ccc);
+    border:1px solid var(--vscode-editorHoverWidget-border, #454545);
+    font-size:0.85em; white-space:pre-wrap; word-break:break-all;
+    box-shadow:0 2px 8px rgba(0,0,0,0.3); cursor:text; user-select:text;
+  }
   #${uid} .sql-json {
     white-space:pre-wrap; word-wrap:break-word;
     font-family:var(--vscode-editor-font-family); font-size:0.9em;
@@ -109,7 +122,32 @@ ${contextText ? `<div style="margin-bottom:4px;font-size:0.85em;color:var(--vsco
   <button onclick="document.querySelector('#${uid} .sql-json-view').style.display='';document.querySelector('#${uid} .sql-table-view').style.display='none';this.classList.add('active');this.previousElementSibling.classList.remove('active')">JSON</button>
   <span class="sql-meta">${result.rowCount} row(s) &middot; ${result.executionTime}ms</span>
 </div>
-<div class="sql-table-view" style="overflow-x:auto">${renderTable(result)}</div>
+<div class="sql-table-view"><div class="sql-table-scroll">${renderTable(result)}</div><div class="sql-tooltip" id="${uid}-tip"></div></div>
+<script>
+(function(){
+  var root=document.getElementById('${uid}');
+  var tip=document.getElementById('${uid}-tip');
+  var hideTimer;
+  root.addEventListener('mouseover',function(e){
+    var td=e.target.closest&&e.target.closest('td');
+    if(!td||!root.contains(td))return;
+    if(td.scrollWidth<=td.clientWidth)return;
+    clearTimeout(hideTimer);
+    tip.textContent=td.getAttribute('data-full')||td.textContent;
+    tip.style.display='block';
+    var r=td.getBoundingClientRect();
+    tip.style.left=r.left+'px';
+    tip.style.top=(r.bottom+4)+'px';
+  });
+  root.addEventListener('mouseout',function(e){
+    var td=e.target.closest&&e.target.closest('td');
+    if(!td)return;
+    hideTimer=setTimeout(function(){tip.style.display='none';},200);
+  });
+  tip.addEventListener('mouseover',function(){clearTimeout(hideTimer);});
+  tip.addEventListener('mouseout',function(){hideTimer=setTimeout(function(){tip.style.display='none';},200);});
+})();
+</script>
 <div class="sql-json-view" style="display:none"><pre class="sql-json">${escapeHtml(jsonData)}</pre></div>
 ${renderMessages(messages, uid)}
 </div>`;
@@ -124,9 +162,10 @@ function renderTable(result: SqlResultSet): string {
     const cells = result.columns.map(col => {
       const val = row[col.name];
       if (val === null || val === undefined) {
-        return '<td class="null-val">NULL</td>';
+        return '<td class="null-val" data-full="NULL">NULL</td>';
       }
-      return `<td>${escapeHtml(String(val))}</td>`;
+      const str = escapeHtml(String(val));
+      return `<td data-full="${str}">${str}</td>`;
     }).join('');
     return `<tr>${cells}</tr>`;
   }).join('');
