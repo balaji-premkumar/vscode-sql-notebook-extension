@@ -1,14 +1,29 @@
 import * as sql from 'mssql';
 import { ConnectionManager } from './connectionManager';
-import { SqlResultSet, ColumnInfo } from './types';
+import { SqlResultSet, ColumnInfo, SqlMessage } from './types';
 
 export class QueryExecutor {
   constructor(private readonly connectionManager: ConnectionManager) {}
 
-  async execute(connectionId: string, query: string): Promise<SqlResultSet[]> {
+  async execute(connectionId: string, query: string): Promise<{ resultSets: SqlResultSet[]; messages: SqlMessage[] }> {
     const pool = await this.connectionManager.getPool(connectionId);
     const start = Date.now();
     const request = pool.request();
+
+    const messages: SqlMessage[] = [];
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const req = request as any;
+    if (typeof req.on === 'function') {
+      req.on('info', (info: { message: string; number?: number; class?: number }) => {
+        const severity = (info.class && info.class > 10) ? 'warning' : 'info';
+        messages.push({ text: info.message, type: severity });
+      });
+      req.on('error', (err: Error) => {
+        messages.push({ text: err.message, type: 'error' });
+      });
+    }
+
     const result = await request.query(query);
     const elapsed = Date.now() - start;
 
@@ -22,7 +37,6 @@ export class QueryExecutor {
         })
       );
 
-      // Skip empty resultsets from USE statements
       if (columns.length === 0) { continue; }
 
       const rows = recordset.map((row: Record<string, unknown>) => {
@@ -37,7 +51,8 @@ export class QueryExecutor {
         columns,
         rows,
         rowCount: recordset.length,
-        executionTime: elapsed
+        executionTime: elapsed,
+        messages: []
       });
     }
 
@@ -46,10 +61,18 @@ export class QueryExecutor {
         columns: [],
         rows: [],
         rowCount: result.rowsAffected.reduce((a: number, b: number) => a + b, 0),
-        executionTime: elapsed
+        executionTime: elapsed,
+        messages: []
       });
     }
 
-    return resultSets;
+    // Add row count messages
+    for (const affected of result.rowsAffected) {
+      if (affected > 0) {
+        messages.push({ text: `(${affected} row(s) affected)`, type: 'info' });
+      }
+    }
+
+    return { resultSets, messages };
   }
 }

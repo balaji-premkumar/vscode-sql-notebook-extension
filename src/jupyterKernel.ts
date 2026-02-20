@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { ConnectionManager } from './connectionManager';
 import { QueryExecutor } from './queryExecutor';
-import { SqlResultSet } from './types';
+import { SqlResultSet, SqlMessage } from './types';
+import { renderResultHtml } from './resultRenderer';
 
 export class SqlJupyterKernel {
   private readonly controllerId = 'sql-notebook-jupyter-kernel';
@@ -77,11 +78,11 @@ export class SqlJupyterKernel {
     const query = activeDb ? `USE [${activeDb}];\n${rawQuery}` : rawQuery;
 
     try {
-      const results = await this.queryExecutor.execute(connectionId, query);
+      const { resultSets, messages } = await this.queryExecutor.execute(connectionId, query);
       const connProfile = this.connectionManager.getActiveConnection();
       const connLabel = connProfile ? `${connProfile.name} (${connProfile.server})` : '';
       const dbLabel = activeDb || connProfile?.database || '';
-      const outputs = results.map(rs => this.resultToOutput(rs, connLabel, dbLabel));
+      const outputs = resultSets.map(rs => this.resultToOutput(rs, connLabel, dbLabel, messages));
       execution.replaceOutput(outputs);
       execution.end(true, Date.now());
     } catch (err: unknown) {
@@ -95,42 +96,11 @@ export class SqlJupyterKernel {
     }
   }
 
-  private resultToOutput(result: SqlResultSet, connLabel: string, dbLabel: string): vscode.NotebookCellOutput {
-    const contextText = connLabel ? `[${connLabel} / ${dbLabel}] ` : '';
-
-    if (result.columns.length === 0) {
-      return new vscode.NotebookCellOutput([
-        vscode.NotebookCellOutputItem.text(
-          `${contextText}Query executed successfully. ${result.rowCount} row(s) affected. (${result.executionTime}ms)`
-        )
-      ]);
-    }
-
-    const tableData = result.rows.map(row => {
-      const clean: Record<string, unknown> = {};
-      for (const col of result.columns) {
-        clean[col.name] = row[col.name] ?? null;
-      }
-      return clean;
-    });
-
-    const meta = `${contextText}${result.rowCount} row(s) returned in ${result.executionTime}ms`;
-
+  private resultToOutput(result: SqlResultSet, connLabel: string, dbLabel: string, messages: SqlMessage[]): vscode.NotebookCellOutput {
+    const html = renderResultHtml(result, connLabel, dbLabel, messages);
     return new vscode.NotebookCellOutput([
-      vscode.NotebookCellOutputItem.json(tableData, 'application/json'),
-      vscode.NotebookCellOutputItem.text(
-        `${meta}\n\n${this.renderPlainText(result)}`,
-        'text/plain'
-      )
+      vscode.NotebookCellOutputItem.text(html, 'text/html')
     ]);
-  }
-
-  private renderPlainText(result: SqlResultSet): string {
-    const header = result.columns.map(c => c.name).join('\t');
-    const rows = result.rows.map(row =>
-      result.columns.map(col => String(row[col.name] ?? 'NULL')).join('\t')
-    ).join('\n');
-    return `${header}\n${rows}`;
   }
 
   dispose(): void {

@@ -40,11 +40,17 @@ export interface DbObjectInfo {
   type: string;
 }
 
+export interface SqlMessage {
+  text: string;
+  type: 'info' | 'error' | 'warning';
+}
+
 export interface SqlResultSet {
   columns: ColumnInfo[];
   rows: Record<string, unknown>[];
   rowCount: number;
   executionTime: number;
+  messages: SqlMessage[];
 }
 
 export interface ColumnInfo {
